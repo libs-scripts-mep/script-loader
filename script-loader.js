@@ -17,8 +17,8 @@ class Loader {
             window.TS = new TestScript(eventMap, event)
 
         } catch (error) {
-            console.warn(error)
-            alert(error)
+            console.warn(error.message)
+            alert(error.message)
             location.reload()
         }
     }

@@ -18,6 +18,7 @@ class Loader {
 
         } catch (error) {
             console.warn(error.message)
+            sessionStorage.clear()
             alert(error.message)
             location.reload()
         }

@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/libs-scripts-mep/script-loader#readme",
   "dependencies": {
-    "@libs-scripts-mep/utils-pvi": "^2.0.0"
+    "@libs-scripts-mep/utils-pvi": "^3.0.0"
   }
 }

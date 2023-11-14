@@ -1,91 +1,45 @@
-class Loader {
+import Effective from "./effective.js"
 
-    static async Init(eventMap, event) {
+export default class TestScriptLoader {
+
+    /**
+     * @param {Array} eventMap Informa ao script as o mapa de eventos a serem cumpridos
+     * @param {String} event Informa ao script o evento atual
+     * @param {String} TSpath Caminho relativo dos scripts à serem carregados em relação à ESTE arquivo
+     * 
+     * # Exemplos
+     * 
+     * ## .html
+     * ```html
+     * <script type="module">
+     * import TestScriptLoader from "./node_modules/@libs-scripts-mep/script-loader/script-loader.js"
+     * TestScriptLoader.Init(["TF"], "TF", "../../../test_scripts/")
+     * </script>
+     * ```
+     */
+    static async Init(eventMap, event, TSpath = "../../../Produtos/") {
         try {
-            const UIRes = await UI.init()
-            console.log(UIRes)
-
-            UI.setMsg("Coletando informações do sistema\n\nAguarde")
-            const ERPData = await this.ERPDataInit()
+            const ERPData = await Effective.ERPDataInit()
             console.log("ERP Data:\n", ERPData)
 
-            UI.setMsg("Carregando script de teste\n\nAguarde")
-            const loadStatus = await this.LoadScript(`./Produtos/${Effective.getProductCode()}.js`)
-            console.log("Load Script Status:\n", loadStatus)
+            const productCode = Effective.getProductCode()
 
-            UI.setMsg("")
-            window.TS = new TestScript(eventMap, event)
+            if (productCode != "") {
+                const testScript = await import(`${TSpath}${productCode}.js`)
+                window.TS = new testScript.default(eventMap, event)
+            } else { throw ("Código do produto baseado no número de série informado, é inválido!") }
 
         } catch (error) {
-            console.warn(error.message)
+            if (error.hasOwnProperty("message")) {
+                console.warn(error.message)
+                alert(error.message)
+            } else {
+                console.warn(error)
+                alert(error)
+            }
             sessionStorage.clear()
-            alert(error.message)
             location.reload()
         }
     }
-
-    static async ERPDataInit() {
-        return new Promise((resolve, reject) => {
-
-            if (Effective.ERPDataExists()) {
-                Effective.getParsedERPData((data) => {
-                    if (data) {
-                        Effective.setProductData(data)
-                        resolve(data)
-                    } else {
-                        sessionStorage.clear()
-                        reject("Erro ao converter dados ERP de sessionStorage")
-                    }
-                })
-            } else {
-                Effective.setERPData((sucess) => {
-                    if (sucess) {
-                        Effective.getParsedERPData((data) => {
-                            if (data) {
-                                Effective.setProductData(data)
-                                resolve(data)
-                            } else {
-                                sessionStorage.clear()
-                                reject("Erro ao converter dados ERP de sessionStorage")
-                            }
-                        })
-                    } else {
-                        reject("Erro ao setar dados ERP em sessionStorage")
-                        sessionStorage.clear()
-                        location.reload()
-                    }
-                })
-            }
-        })
-    }
-
-    static LoadScript(FILE_URL, async = true, type = "text/javascript") {
-        return new Promise((resolve, reject) => {
-            try {
-                const scriptElement = document.createElement("script")
-                scriptElement.type = type
-                scriptElement.async = async
-                scriptElement.src = FILE_URL
-
-                scriptElement.addEventListener("load", (ev) => {
-                    resolve({
-                        status: true,
-                        scriptFile: FILE_URL
-                    })
-                })
-                scriptElement.addEventListener("error", (ev) => {
-                    reject({
-                        status: false,
-                        scriptFile: FILE_URL,
-                        message: `Failed to load the script ${FILE_URL}`
-                    })
-                })
-
-                document.body.appendChild(scriptElement)
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
+    static { console.log("TestScriptLoader is ready!") }
 }
-

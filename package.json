@@ -15,8 +15,5 @@
   "bugs": {
     "url": "https://github.com/libs-scripts-mep/script-loader/issues"
   },
-  "homepage": "https://github.com/libs-scripts-mep/script-loader#readme",
-  "dependencies": {
-    "@libs-scripts-mep/utils-pvi": "^3.0.0"
-  }
+  "homepage": "https://github.com/libs-scripts-mep/script-loader#readme"
 }

@@ -194,3 +194,146 @@ export default class Log {
 
     static { window.Log = Log }
 }
+
+export class TestEmmiter {
+    static Events = {}
+
+    /**
+     * Emite um evento de teste que será inserido no `TestEvents.Events`
+     * @param {String} testName 
+     * @param {String} symbol 
+     * 
+     * # Exemplos
+     * 
+     * ```js
+     * TestEmmiter.emmit("Teste1", "⏳")
+     * //teste acontendo...
+     * TestEmmiter.emmit("Teste1", "✅")
+     * ```
+     */
+    static emmit(testName, symbol) {
+        if (this.Events.hasOwnProperty(testName)) {
+            this.Events[testName]["symbol"] = symbol
+            this.Events[testName].finish = parseInt(performance.now())
+            this.Events[testName].elapsed = this.Events[testName].finish - this.Events[testName].start
+            Log.console(`${testName}: ${this.Events[testName].elapsed}ms`, Log.Colors.Blue.LightSteelBlue)
+        } else {
+            this.Events[testName] = {}
+            this.Events[testName]["symbol"] = symbol
+            this.Events[testName]["start"] = parseInt(performance.now())
+        }
+    }
+
+    /**
+     * Itera sobre o objeto `TestEvents.Events` e monta um novo `Map` contendo os nomes de teste e os respectivos símbolos
+     * @returns Map
+     */
+    static getMapOfSymbols() {
+        const map = new Map()
+        const events = Object.entries(this.Events)
+        events.forEach((info) => { map.set(info[0], info[1].symbol) })
+        return map
+    }
+
+    /**
+     * Itera sobre o objeto `TestEvents.Events` e monta um novo `Map` contendo os nomes de teste e os respectivos timestamp de início
+     * @returns Map
+     */
+    static getMapOfStart() {
+        const map = new Map()
+        const events = Object.entries(this.Events)
+        events.forEach((info) => { map.set(info[0], info[1].start) })
+        return map
+    }
+
+    /**
+     * Itera sobre o objeto `TestEvents.Events` e monta um novo `Map` contendo os nomes de teste e os respectivos timestamp de fim
+     * @returns Map
+     */
+    static getMapOfFinish() {
+        const map = new Map()
+        const events = Object.entries(this.Events)
+        events.forEach((info) => { map.set(info[0], info[1].finish) })
+        return map
+    }
+
+    /**
+     * Itera sobre o objeto `TestEvents.Events` e monta um novo `Map` contendo os nomes de teste e o respectivo tempo de duração
+     * @returns Map
+     */
+    static getMapOfElapsed() {
+        const map = new Map()
+        const events = Object.entries(this.Events)
+        events.forEach((info) => { map.set(info[0], info[1].elapsed) })
+        return map
+    }
+
+    /**
+     * Analisa e retorna o teste emitido com maior tempo de execução
+     * @returns Array
+     * 
+     * # Exemplos
+     * 
+     * ```js
+     * const slowest = TestEmmiter.getSlowest()
+     * ```
+     * 
+     * # Retorno
+     * 
+     * ```
+     * [String | null, Number | null]
+     * ```
+     * 
+     */
+    static getSlowest() {
+        const elapsed = this.getMapOfElapsed()
+        let slowest = [null, null]
+        for (const test of elapsed) {
+            if (slowest[1] != null) {
+                slowest[1] < test[1] ? slowest = test : null
+            } else {
+                slowest = test
+            }
+        }
+        return slowest
+    }
+
+    /**
+     * Analisa e retorna o teste emitido com menor tempo de execução
+     * @returns Array
+     * 
+     * # Exemplos
+     * 
+     * ```js
+     * const fastest = TestEmmiter.getFastest()
+     * ```
+     * 
+     * # Retorno
+     * 
+     * ```
+     * [String | null, Number | null]
+     * ```
+     * 
+     */
+    static getFastest() {
+        const elapsed = this.getMapOfElapsed()
+        let fastest = [null, null]
+        for (const test of elapsed) {
+            if (fastest[1] != null) {
+                fastest[1] > test[1] ? fastest = test : null
+            } else {
+                fastest = test
+            }
+        }
+        return fastest
+    }
+
+    /**
+     * Printa como tabela no console o objeto `TestEmmiter.Events`
+     * 
+     * ![Image](https://i.imgur.com/ZljXR9x.png)
+     */
+    static table() { console.table(this.Events) }
+
+    static { window.TestEmmiter = TestEmmiter }
+}

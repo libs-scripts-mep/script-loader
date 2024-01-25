@@ -203,7 +203,7 @@ export default class Log {
     static overridingConsoleLog() {
 
         console.log = function (message, style) {
-            Log.log(message, style)
+            style == undefined ? Log.log(message) : Log.log(message, style)
             typeof message == "string" ? message = message.replace("%c", "") : null
             typeof message == "object" ? message = JSON.stringify(message) : null
             Log.history.push(`${message}\n`)

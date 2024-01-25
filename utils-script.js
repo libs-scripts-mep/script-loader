@@ -1,4 +1,8 @@
 export default class Log {
+
+    static history = [];
+    static log = console.log
+
     static Colors = {
         Blue: {
             Blue: "color: #0000FF",
@@ -192,7 +196,23 @@ export default class Log {
         })
     }
 
-    static { window.Log = Log }
+    /**
+     * Realiza um overide no método do console.log, o método irá funcionar da mesma forma, porém agora armazenando em uma variável todos os valores.
+     */
+
+    static overridingConsoleLog() {
+
+        console.log = function (message, style) {
+            Log.log(message, style)
+            typeof message == "string" ? message = message.replace("%c", "") : null
+            typeof message == "object" ? message = JSON.stringify(message) : null
+            Log.history.push(`${message}\n`)
+        }
+
+    }
+
+    static { window.Log = Log; this.overridingConsoleLog() }
+
 }
 
 export class TestEmmiter {

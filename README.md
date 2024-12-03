@@ -1,6 +1,6 @@
 # Carregador dinâmico de scripts
 
-Busca informações do ERP, e com ela abre um script dinamicamente
+Abre um script dinamicamente a partir do código do produto previamente carregado no PVI. Caso o arquivo seja aberto manualmente, solicita um número de série para obter as informações.
 
 ## Instalando
 

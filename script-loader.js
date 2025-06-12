@@ -49,7 +49,7 @@ export default class TestScriptLoader {
                 return
             } catch (error) {
                 if (error.message.includes("Failed to fetch")) { continue }
-                
+
                 console.warn(error.message)
                 alert(error.message)
                 location.reload()
@@ -77,7 +77,7 @@ export default class TestScriptLoader {
         if (!await rast.init()) {
             serialNumber == null || serialNumber == ""
                 ? alert("É preciso informar um número de série!")
-                : alert(`Não foi possível buscar as informações do produto com o número de série '${serialNumber}'!`)
+                : alert(`Não foi possível buscar as informações do produto com o número de série '${serialNumber}'!\n\n${rast.InitInfo.ResultError}: ${rast.InitInfo.Message}`)
         }
         RastUtil.setValidations(RastUtil.ENABLED, RastUtil.ENABLED, RastUtil.ENABLED, RastUtil.ENABLED)
         sessionStorage.clear()

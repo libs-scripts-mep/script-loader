@@ -211,7 +211,7 @@ export default class Log {
 
     }
 
-    static { window.Log = Log; this.overridingConsoleLog() }
+    static { window.Log = Log }
 
 }
 

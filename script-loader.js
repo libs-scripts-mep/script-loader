@@ -1,16 +1,17 @@
 class Loader {
 
     static async Init(eventMap, event) {
+        const UIRes = await UI.init()
+        console.log(UIRes)
+
+        if (pvi.runInstructionS("rastreamento.getproductcode", []) == "") {
+            Log.color("Informações do produto não estão previamente carregadas no PVI", Log.OrangeRed)
+            await this.rastInit(eventMap, event)
+        }
+
         try {
-            const UIRes = await UI.init()
-            console.log(UIRes)
-
-            UI.setMsg("Coletando informações do sistema\n\nAguarde")
-            const ERPData = await this.ERPDataInit()
-            console.log("ERP Data:\n", ERPData)
-
             UI.setMsg("Carregando script de teste\n\nAguarde")
-            const loadStatus = await this.LoadScript(`./Produtos/${Effective.getProductCode()}.js`)
+            const loadStatus = await this.LoadScript(`./Produtos/${pvi.runInstructionS("rastreamento.getproductcode", [])}.js`)
             console.log("Load Script Status:\n", loadStatus)
 
             UI.setMsg("")
@@ -24,39 +25,21 @@ class Loader {
         }
     }
 
-    static async ERPDataInit() {
-        return new Promise((resolve, reject) => {
+    static async rastInit(eventMap, event) {
+        const rast = new RastPVI(eventMap, event, {})
+        rast.SerialNumber = prompt("Informe o número de serie do produto:\nEx: 1000001234567")
+        if (rast == null || rast == "") {
+            alert("É necessário informar o número de série!")
+            location.reload()
+        }
 
-            if (Effective.ERPDataExists()) {
-                Effective.getParsedERPData((data) => {
-                    if (data) {
-                        Effective.setProductData(data)
-                        resolve(data)
-                    } else {
-                        sessionStorage.clear()
-                        reject("Erro ao converter dados ERP de sessionStorage")
-                    }
-                })
-            } else {
-                Effective.setERPData((sucess) => {
-                    if (sucess) {
-                        Effective.getParsedERPData((data) => {
-                            if (data) {
-                                Effective.setProductData(data)
-                                resolve(data)
-                            } else {
-                                sessionStorage.clear()
-                                reject("Erro ao converter dados ERP de sessionStorage")
-                            }
-                        })
-                    } else {
-                        reject("Erro ao setar dados ERP em sessionStorage")
-                        sessionStorage.clear()
-                        location.reload()
-                    }
-                })
-            }
-        })
+        RastUtil.setValidations(RastUtil.DISABLED, RastUtil.DISABLED, RastUtil.DISABLED, RastUtil.DISABLED)
+        await RastUtil.setOperador()
+        if (!await rast.init()) {
+            alert(`Não foi possível buscar as informações do produto com o número de série '${rast.SerialNumber}'!\n\n${rast.InitInfo.ResultError}: ${rast.InitInfo.Message}`)
+            location.reload()
+        }
+        RastUtil.setValidations(RastUtil.ENABLED, RastUtil.ENABLED, RastUtil.ENABLED, RastUtil.ENABLED)
     }
 
     static LoadScript(FILE_URL, async = true, type = "text/javascript") {

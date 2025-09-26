@@ -1,4 +1,4 @@
-import Effective from "./effective.js"
+import FWLink from "../daq-fwlink/FWLink.js"
 
 export default class TestScriptLoader {
 
@@ -19,16 +19,15 @@ export default class TestScriptLoader {
      */
     static async Init(eventMap, event, TSpath = "../../../Produtos/") {
         try {
-            const ERPData = await Effective.ERPDataInit()
-            console.log("ERP Data:\n", ERPData)
-
-            const productCode = Effective.getProductCode()
-
-            if (productCode != "") {
-                const testScript = await import(`${TSpath}${productCode}.js`)
+            if (FWLink.runInstructionS("rastreamento.getproductcode", []) != "") {
+                const testScript = await import(`${TSpath}${FWLink.runInstructionS("rastreamento.getproductcode", [])}.js`)
                 window.TS = new testScript.default(eventMap, event)
-            } else { throw ("Código do produto baseado no número de série informado, é inválido!") }
+                return
+            }
 
+            console.log("%cInformações do produto não estão previamente carregadas", "color: #FF4500;")
+            await this.rastInit(eventMap, event)
+            location.reload()
         } catch (error) {
             if (error.hasOwnProperty("message")) {
                 console.warn(error.message)
@@ -41,5 +40,56 @@ export default class TestScriptLoader {
             location.reload()
         }
     }
+
+    static async rastInit(eventMap, event) {
+        FWLink.runInstructionS("rastreamento.setvalidations", ["disabled", "disabled", "disabled", "disabled"])
+        const serialNumber = this.getSerialNumber()
+        FWLink.runInstructionS("ras.init", ["true", serialNumber, eventMap.join(";"), event])
+
+        const observer = await this.rastObserver(serialNumber)
+        if (!observer.result) {
+            alert(`Não foi possível buscar as informações do produto com o número de série '${serialNumber}'!\n\n${observer.info.ResultError}: ${observer.info.Message}`)
+            location.reload()
+        }
+        FWLink.runInstructionS("rastreamento.setvalidations", ["enabled", "enabled", "enabled", "enabled"])
+    }
+
+    /**@returns {string} */
+    static getSerialNumber() {
+        const serialNumber = prompt("Informe o número de serie do produto:\nEx: 1000001234567")
+        if (serialNumber == null || serialNumber == "") {
+            alert("É necessário informar o número de série!")
+            location.reload()
+        }
+        return serialNumber
+    }
+
+    /** @returns {Promise<{ result: boolean, info: { ResultError: string, Message: string } }>} */
+    static async rastObserver(serialNumber) {
+        return new Promise((resolve) => {
+            const id = FWLink.PVIEventObserver.add((message, param) => {
+                if (message.includes(serialNumber)) {
+                    const result = param[0]
+                    const info = JSON.parse(param[1])
+
+                    if (message.includes("init")) {
+                        FWLink.PVIEventObserver.remove(id)
+                        console.log(`Rastreamento Init ${serialNumber}\n`, result, info)
+                        resolve({ result, info })
+                    }
+                }
+            }, "rastreamento")
+        })
+    }
+
+    static getSerialNumber() {
+        const serialNumber = prompt("Informe o número de serie do produto:\nEX: 1000001234567")
+        if (serialNumber == null || serialNumber == "") {
+            alert("É necessário informar um número de série!")
+            location.reload()
+        }
+        return serialNumber
+    }
+
     static { console.log("TestScriptLoader is ready!") }
 }

@@ -5,8 +5,9 @@ class Loader {
         console.log(UIRes)
 
         if (pvi.runInstructionS("rastreamento.getproductcode", []) == "") {
-            Log.color("Informações do produto não estão previamente carregadas no PVI", Log.OrangeRed)
+            console.log("%cInformações do produto não estão previamente carregadas no PVI", 'color: #FF4500')
             await this.rastInit(eventMap, event)
+            location.reload()
         }
 
         try {
@@ -26,20 +27,44 @@ class Loader {
     }
 
     static async rastInit(eventMap, event) {
-        const rast = new RastPVI(eventMap, event, {})
-        rast.SerialNumber = prompt("Informe o número de serie do produto:\nEx: 1000001234567")
-        if (rast == null || rast == "") {
+        pvi.runInstructionS("rastreamento.setvalidations", ["disabled", "disabled", "disabled", "disabled"])
+        const serialNumber = this.getSerialNumber()
+        pvi.runInstructionS("ras.init", ["true", serialNumber, eventMap.join(";"), event])
+
+        const observer = await this.rastObserver(serialNumber)
+        if (!observer.result) {
+            alert(`Não foi possível buscar as informações do produto com o número de série '${serialNumber}'!\n\n${observer.info.ResultError}: ${observer.info.Message}`)
+            location.reload()
+        }
+        pvi.runInstructionS("rastreamento.setvalidations", ["enabled", "enabled", "enabled", "enabled"])
+    }
+
+    /**@returns {string} */
+    static getSerialNumber() {
+        const serialNumber = prompt("Informe o número de serie do produto:\nEx: 1000001234567")
+        if (serialNumber == null || serialNumber == "") {
             alert("É necessário informar o número de série!")
             location.reload()
         }
+        return serialNumber
+    }
 
-        RastUtil.setValidations(RastUtil.DISABLED, RastUtil.DISABLED, RastUtil.DISABLED, RastUtil.DISABLED)
-        await RastUtil.setOperador()
-        if (!await rast.init()) {
-            alert(`Não foi possível buscar as informações do produto com o número de série '${rast.SerialNumber}'!\n\n${rast.InitInfo.ResultError}: ${rast.InitInfo.Message}`)
-            location.reload()
-        }
-        RastUtil.setValidations(RastUtil.ENABLED, RastUtil.ENABLED, RastUtil.ENABLED, RastUtil.ENABLED)
+    /** @returns {Promise<{ result: boolean, info: { ResultError: string, Message: string } }>} */
+    static async rastObserver(serialNumber) {
+        return new Promise((resolve) => {
+            const id = PVI.FWLink.globalDaqMessagesObservers.add((message, param) => {
+                if (message.includes(serialNumber)) {
+                    const result = param[0]
+                    const info = JSON.parse(param[1])
+
+                    if (message.includes("init")) {
+                        PVI.FWLink.globalDaqMessagesObservers.remove(id)
+                        console.log(`Rastreamento Init ${serialNumber}\n`, result, info)
+                        resolve({ result, info })
+                    }
+                }
+            }, "rastreamento")
+        })
     }
 
     static LoadScript(FILE_URL, async = true, type = "text/javascript") {

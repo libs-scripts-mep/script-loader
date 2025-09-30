@@ -82,14 +82,5 @@ export default class TestScriptLoader {
         })
     }
 
-    static getSerialNumber() {
-        const serialNumber = prompt("Informe o número de serie do produto:\nEX: 1000001234567")
-        if (serialNumber == null || serialNumber == "") {
-            alert("É necessário informar um número de série!")
-            location.reload()
-        }
-        return serialNumber
-    }
-
     static { console.log("TestScriptLoader is ready!") }
 }
